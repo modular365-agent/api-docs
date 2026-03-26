@@ -8,7 +8,7 @@ const config: Config = {
   favicon: 'img/favicon.ico',
 
   url: 'https://docs.ozari.co.il',
-  baseUrl: '/api-docs/',
+  baseUrl: '/',
 
   organizationName: 'modular365-agent',
   projectName: 'api-docs',
