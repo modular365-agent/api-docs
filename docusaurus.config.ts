@@ -7,11 +7,12 @@ const config: Config = {
   tagline: 'Integration API Documentation',
   favicon: 'img/favicon.ico',
 
-  url: 'https://docs.modular365.co.il',
-  baseUrl: '/',
+  url: 'https://modular365-agent.github.io',
+  baseUrl: '/api-docs/',
 
-  organizationName: 'modular365',
+  organizationName: 'modular365-agent',
   projectName: 'api-docs',
+  trailingSlash: false,
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
