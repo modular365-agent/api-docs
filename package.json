@@ -2,7 +2,9 @@
   "name": "modular365-api-docs",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "npm@10.9.2",
   "scripts": {
+    "turbo": "TURBO_API=http://10.10.10.10:3000 TURBO_TOKEN=mytoken TURBO_TEAM=local turbo run build",
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
     "build": "docusaurus build",
@@ -21,6 +23,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "turbo": "^2.9.12",
     "@docusaurus/module-type-aliases": "^3.7.0",
     "@docusaurus/tsconfig": "^3.7.0",
     "typescript": "~5.7.0"

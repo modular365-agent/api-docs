@@ -1,0 +1,20 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!dist/**",
+        "!node_modules/**",
+        "!.turbo/**",
+        "!tsconfig.tsbuildinfo",
+        "!*.tsbuildinfo"
+      ],
+      "outputs": [
+        "dist/**",
+        "tsconfig.tsbuildinfo",
+        "*.tsbuildinfo"
+      ]
+    }
+  }
+}
