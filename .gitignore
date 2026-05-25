@@ -3,3 +3,7 @@ build/
 .docusaurus/
 .cache-loader/
 .turbo/
+
+# Local tool caches (do not commit)
+graphify-out/cache/
+.claude/
