@@ -8,3 +8,4 @@ build/
 graphify-out/cache/
 .claude/
 graphify-out/
+.DS_Store
