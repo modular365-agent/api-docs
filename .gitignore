@@ -7,3 +7,4 @@ build/
 # Local tool caches (do not commit)
 graphify-out/cache/
 .claude/
+graphify-out/
