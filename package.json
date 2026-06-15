@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "npm@10.9.2",
   "scripts": {
-    "turbo": "TURBO_API=http://10.10.10.10:3000 TURBO_TOKEN=mytoken TURBO_TEAM=local turbo run build",
+    "turbo": "turbo run build",
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
     "build": "docusaurus build",
