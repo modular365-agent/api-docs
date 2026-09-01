@@ -2,7 +2,7 @@
 id: errors
 title: Error Handling
 sidebar_label: Error Handling
-sidebar_position: 7
+sidebar_position: 8
 ---
 
 # Error Handling
@@ -44,6 +44,7 @@ Some error responses include additional fields for debugging:
 | `400 Bad Request` | Invalid request | Missing required fields, invalid field names, invalid table name, attempting to set primary key |
 | `401 Unauthorized` | Authentication missing | No `Authorization` header or malformed header |
 | `403 Forbidden` | Authentication failed | Invalid or expired API token |
+| `403 Forbidden` | Table not readable | The table holds credential material and is never exposed by the Integration API (see [Query Records](./query-records)) |
 | `404 Not Found` | Resource not found | Table does not exist, or no records match filters (single update) |
 | `409 Conflict` | Conflict | Multiple records match filters on single-update endpoint |
 
