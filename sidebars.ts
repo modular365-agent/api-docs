@@ -11,6 +11,7 @@ const sidebars: SidebarsConfig = {
         'api/get-languages',
         'api/get-tables',
         'api/get-fields',
+        'api/query-records',
         'api/insert-record',
         'api/update-single',
         'api/update-bulk',

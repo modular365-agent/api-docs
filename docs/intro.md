@@ -41,6 +41,10 @@ Authorization: Bearer your-api-token-here
 
 See the [Authentication](./authentication) page for full details on obtaining and using your API key.
 
+## Reading and writing
+
+The API covers both directions: [Query Records](./api/query-records) pulls rows out of a table (with a JSON filter tree, sorting and paging), while [Insert Record](./api/insert-record) and the update endpoints push data in.
+
 ## Quick Example
 
 Here is a quick example that lists all available tables in your tenant database:

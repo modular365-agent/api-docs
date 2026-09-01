@@ -2,7 +2,7 @@
 id: update-bulk
 title: Update Bulk Records
 sidebar_label: Update Bulk Records
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 # Update Bulk Records
