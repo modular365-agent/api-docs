@@ -46,7 +46,7 @@ You cannot set primary key columns (such as `fid`). The API will reject the requ
 | `table` | string | The table the record was inserted into |
 | `insertedId` | number \| null | The auto-generated ID of the new record |
 | `fields` | object | The field values that were inserted |
-| `detailsInserted` | object | Present only when `details` was sent: rows inserted per detail table |
+| `detailsInserted` | object | Present only when `details` has at least one key (absent for `details` omitted, `null` or `{}`): rows inserted per detail table. A table sent with an empty array is listed with `0`. |
 
 ## Examples
 
@@ -161,9 +161,9 @@ curl -X POST "https://api.ozari.co.il/integration/tables/tq/records" \
 - **Server-set columns.** `id_register` (the link to the new record) and the detail primary key are set by the server. Do not send them.
 - **Column names** must match the detail table's columns exactly, including letter case.
 - **Same fields on every row.** Every row of one detail table must carry the same field names. Send `null` for a blank value.
-- **Scalar values only** (string, number, boolean or `null`). An empty string `""` is stored as an empty string, not converted to `null`, and is rejected on numeric or date columns (`400` with code `invalid_value`).
+- **Scalar values only** (string, finite number, boolean or `null`; numbers such as `1e999` that overflow are rejected). An empty string `""` is stored as an empty string, not converted to `null`, and is rejected on numeric or date columns (`400` with code `invalid_value`).
 - **No server-side calculations or defaults.** Send computed columns yourself (for example `subtotal`). Header totals that database triggers derive from the detail rows depend on the columns you send.
-- **Write order.** Detail tables are written in the tenant's configured order, not in the order of your JSON keys.
+- **Write order.** Detail tables are written sorted by table name (the database's ascending sort on the registered `details_table`, so its collation decides the order), not in the order of your JSON keys. The tenant's configured display order (`forder`) is not used for write order.
 - **Limits.** At most 500 detail rows in total across all detail tables, and a 100 kB request body. With wide rows the body limit can be reached first.
 - **All or nothing.** The record and all its detail rows are written in one transaction. If anything fails, nothing is saved.
 - **Detail row ids are not returned.** To get them, read the rows back with [Query Records](./query-records) filtered on `id_register` equal to `insertedId`. If the rows are not visible yet, repeat the query, never the insert.
@@ -292,10 +292,10 @@ A detail row sends `id_register`, which the server sets.
 
 #### `invalid_detail_value`
 
-A value is not a string, number, boolean or `null`, or it is the reserved text `$insert_id`.
+A value is not a string, finite number, boolean or `null`, or it is the reserved text `$insert_id`.
 
 ```json
-{ "success": false, "error": "Detail field qty must be a string, number, boolean or null", "code": "invalid_detail_value", "detailTable": "tq_details", "row": 0, "field": "qty" }
+{ "success": false, "error": "Detail field qty must be a string, finite number, boolean or null", "code": "invalid_detail_value", "detailTable": "tq_details", "row": 0, "field": "qty" }
 ```
 **Status:** `400 Bad Request`
 
@@ -346,16 +346,24 @@ A field is the primary key of the detail table, which the server sets.
 
 ### Protected table
 
-A table, or a setting, that cannot be written through the API.
+A table, or a setting, that cannot be written through the API. The body depends on where it was found.
+
+When the protected table is the table in the URL, or the protected setting is in `fields`, the body has `success` and `error` only:
+
+```json
+{ "success": false, "error": "<description of the protected table or setting>" }
+```
+
+When a detail table in `details` is protected, the body also carries `code` and `detailTable`:
 
 ```json
 { "success": false, "error": "<description of the protected table or setting>", "code": "protected_table", "detailTable": "btn_function" }
 ```
-**Status:** `403 Forbidden`
+**Status:** `403 Forbidden` (both)
 
 ### Database rejected a value
 
-When the request has `details`, a value the database refuses returns one of these codes: `value_too_long`, `out_of_range`, `invalid_value`, `missing_value`, `invalid_reference`, `duplicate_value`, `constraint_violation`. `field` names the column (as `column`, or `table.column` for a detail table) only when you sent it. Nothing was saved.
+When the request sends at least one detail row (a request with only empty arrays behaves like one without `details`), a value the database refuses returns one of these codes: `value_too_long`, `out_of_range`, `invalid_value`, `missing_value`, `invalid_reference`, `duplicate_value`, `constraint_violation`. `field` names the column (as `column`, or `table.column` for a detail table) only when you sent it. Nothing was saved.
 
 ```json
 { "success": false, "error": "Value for tq_details.catnum is too long. Nothing was saved; fix the value and save again.", "code": "value_too_long", "field": "tq_details.catnum" }

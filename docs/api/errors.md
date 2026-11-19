@@ -49,7 +49,7 @@ A few responses use a problem+json body (`type`, `title`, `status`, `detail`) in
 | `401 Unauthorized` | Authentication missing | No `Authorization` header or malformed header |
 | `403 Forbidden` | Authentication failed | Invalid or expired API token |
 | `403 Forbidden` | Table not readable | The table holds credential material and is never exposed by the Integration API (see [Query Records](./query-records)) |
-| `403 Forbidden` | Protected table | The table or setting cannot be written through the API |
+| `403 Forbidden` | Protected table | The table or setting cannot be written through the API. The body has `success` and `error`; when the protected table is a detail table, it also has `code` `protected_table` and `detailTable` (see [Insert Record](./insert-record#protected-table)) |
 | `404 Not Found` | Resource not found | Table does not exist, or no records match filters (single update) |
 | `409 Conflict` | Conflict | Multiple records match filters on single-update endpoint |
 
