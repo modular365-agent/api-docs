@@ -28,6 +28,10 @@ Some error responses include additional fields for debugging:
 }
 ```
 
+Insert errors may also carry `code` (machine-readable), `detailTable`, `row` (0-based) and `field`. Branch on `code`, not on the `error` text. See [Insert Record](./insert-record#error-responses).
+
+A few responses use a problem+json body (`type`, `title`, `status`, `detail`) instead of `success` and `error`: a request body over 100 kB (`500`), and a `403` with `detail` `table_denied` for internal tables. Handle both shapes.
+
 ## HTTP Status Codes
 
 ### Success Codes
@@ -41,10 +45,11 @@ Some error responses include additional fields for debugging:
 
 | Code | Meaning | Common Causes |
 |------|---------|---------------|
-| `400 Bad Request` | Invalid request | Missing required fields, invalid field names, invalid table name, attempting to set primary key |
+| `400 Bad Request` | Invalid request | Missing required fields, invalid field names, invalid table name, attempting to set primary key, invalid detail rows, a detail table not registered for the record's table (registering detail tables is a tenant-administrator setting, do not do it through the API), a database value rejected |
 | `401 Unauthorized` | Authentication missing | No `Authorization` header or malformed header |
 | `403 Forbidden` | Authentication failed | Invalid or expired API token |
 | `403 Forbidden` | Table not readable | The table holds credential material and is never exposed by the Integration API (see [Query Records](./query-records)) |
+| `403 Forbidden` | Protected table | The table or setting cannot be written through the API |
 | `404 Not Found` | Resource not found | Table does not exist, or no records match filters (single update) |
 | `409 Conflict` | Conflict | Multiple records match filters on single-update endpoint |
 
@@ -52,7 +57,7 @@ Some error responses include additional fields for debugging:
 
 | Code | Meaning | Common Causes |
 |------|---------|---------------|
-| `500 Internal Server Error` | Server error | Database connection issues, unexpected exceptions |
+| `500 Internal Server Error` | Server error | Database connection issues, unexpected exceptions, a request body larger than 100 kB (returns a problem+json body, not `success` and `error`) |
 
 ## Common Error Scenarios
 
@@ -157,7 +162,7 @@ Some error responses include additional fields for debugging:
 
 4. **Log error responses** -- Capture the full error response body for debugging, not just the HTTP status code.
 
-5. **Retry on `500`** -- Server errors may be transient (database timeouts, temporary connectivity issues). Implement exponential backoff for retries.
+5. **Retry `500` only when it is safe** -- Reads and updates can be retried with backoff. `POST .../records` is not idempotent (there is no idempotency key in this version): any `5xx` or timeout on an insert is an unknown outcome, because the record may have been created. First check by a natural key ([Query Records](./query-records)) whether it exists. A miss right after the failure is not conclusive: wait a few seconds and check again. Never retry a body-too-large `500`.
 
 ## Field Name Rules
 
