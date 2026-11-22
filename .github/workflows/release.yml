@@ -1,0 +1,107 @@
+# Automated semantic versioning for api-docs (semantic-release).
+#
+# On every push to main: verify (npm ci + docs build), then semantic-release
+# reads the Conventional Commits since the last v* tag, picks the next version,
+# bumps package.json / package-lock.json, commits that as
+# `chore(release): x.y.z`, tags `vX.Y.Z` and creates a GitHub Release. Nothing
+# is published to npm (npmPublish: false). There is no image and no runtime
+# service: this repo is a Docusaurus static site deployed by deploy.yml.
+#
+# RUNNER: GitHub-hosted ubuntu-latest with actions/setup-node (node 24).
+# semantic-release 25 needs node >=24.10 or ^22.14.
+#
+# WHY PINNED VERSIONS: no new dependencies in package.json / lockfile, so the
+# tooling is fetched via `npx` at exact versions. The changelog preset is held
+# at 9.3.1: 10.x breaks release-notes-generator 14.1.1. Bump deliberately.
+#
+# WHY AN APP TOKEN: the release commit is pushed to the protected main branch.
+# The default GITHUB_TOKEN cannot push there, so a GitHub App token is used;
+# the App must be in the branch ruleset bypass list.
+#
+# THE RELEASE COMMIT RE-TRIGGERS deploy.yml (no [skip ci]): this is intended,
+# the Pages site is rebuilt from the released commit. The loop guard is the
+# job-level `if` on `chore(release):` below: the bot's push runs neither job
+# of this workflow.
+#
+# REQUIRED SECRETS: RELEASE_APP_ID, RELEASE_APP_PRIVATE_KEY (GitHub App with
+# contents: write on this repo). A baseline tag v<package.json version> must
+# exist on main before the first release so the history starts from the current
+# package version.
+
+name: release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Run semantic-release with --dry-run (no tag, commit or release)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Build
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  release:
+    name: Release
+    needs: verify
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
+    # All writes use the App token; the workflow token stays read-only.
+    permissions:
+      contents: read
+    steps:
+      - name: Create release App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: semantic-release
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          npm_config_ignore_scripts: "true"
+        run: >-
+          npx --yes
+          -p semantic-release@25.0.9
+          -p @semantic-release/commit-analyzer@13.0.1
+          -p @semantic-release/release-notes-generator@14.1.1
+          -p @semantic-release/npm@13.2.0
+          -p @semantic-release/git@10.0.1
+          -p @semantic-release/github@12.0.11
+          -p conventional-changelog-conventionalcommits@9.3.1
+          semantic-release ${{ inputs.dry_run && '--dry-run' || '' }}
